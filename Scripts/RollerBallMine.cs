@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using BepInEx.Bootstrap;
 using GameNetcodeStuff;
+using RandomEnemiesSize;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -47,25 +49,53 @@ public class RollerBallMine: NetworkBehaviour, IHittable
         }
     }
 
+    public void UpdateValues(RollerBallMineValues values)
+    {
+        explosionRange = values.ExplosionRange;
+        explosionDamage = values.ExplosionDamage;
+        detectionRange = values.DetectionRange;
+        speed = values.Speed;
+        explodeTime = values.ExplodeTime;
+        detectPlayerRadius = values.TriggerRadius;
+    }
+
     private void Start()
     {
-        
+        if(RollerBallMinePlugin.instance.DebugMode.Value) Debug.Log($"{gameObject.name} spawned");
+            
         explodeTime = RollerBallMinePlugin.instance.ExplodeTime.Value;
         detectPlayerRadius = RollerBallMinePlugin.instance.TriggerRadius.Value;
         detectionRange = RollerBallMinePlugin.instance.DetectionRange.Value;
         explosionDamage = RollerBallMinePlugin.instance.ExplosionDamage.Value;
         speed = RollerBallMinePlugin.instance.Speed.Value;
         explosionRange = RollerBallMinePlugin.instance.ExplosionRange.Value;
+        
+        runAudioSource.volume = RollerBallMinePlugin.instance.SoundVolume.Value;
+        sfxAudioSource.volume = RollerBallMinePlugin.instance.SoundVolume.Value;
 
         if (IsServer)
         {
             NetworkRollerBallMine.SetValueClientRpc( NetworkBehaviourId, Random.Range(40, 70));
         }
         navMeshAgent.enabled = true;
+
+
+        RollerBallMineValues values = new RollerBallMineValues();
+        
+        values.ExplosionRange = explosionRange;
+        values.ExplosionDamage = explosionDamage;
+        values.DetectionRange = detectionRange;
+        values.Speed = speed;
+        values.ExplodeTime = explodeTime;
+        values.TriggerRadius = detectPlayerRadius;
+        
+        NetworkRollerBallMine.UpdateValuesClientRpc(NetworkBehaviourId, values);
+        
     }
 
     private void Update()
     {
+        
         if (hasExploded) return;
         if (detected)
         {
@@ -90,7 +120,19 @@ public class RollerBallMine: NetworkBehaviour, IHittable
             {
                 if (Vector3.Distance(transform.position, player.transform.position) <= detectionRange && Vector3.Distance(new Vector3(0,transform.position.y,0)  , new Vector3(0,player.transform.position.y,0)) <= 2f  )
                 {
-                    if(IsServer) NetworkRollerBallMine.DetectPlayerClientRpc(NetworkObjectId, player.transform.position);
+                    
+
+                    StartOfRound.Instance.allPlayerScripts.ToList().ForEach(p =>
+                    {
+                        if (!Physics.Linecast(transform.position + (Vector3.up * 0.25f), p.transform.position, StartOfRound.Instance.collidersAndRoomMaskAndDefault))
+                        {
+                            if(IsServer) NetworkRollerBallMine.DetectPlayerClientRpc(NetworkObjectId, player.transform.position);
+                        }
+                    });
+                    
+                    
+                    
+                    
                 }
             });
         }
@@ -106,8 +148,8 @@ public class RollerBallMine: NetworkBehaviour, IHittable
         modelAnimator.SetBool(Run, true);
         spikeAnimator.SetBool(Open, true);
         
-
-        
+        runAudioSource.clip = runClip;
+        runAudioSource.Play();
         sfxAudioSource.PlayOneShot(activateClip);
     }
 
@@ -116,6 +158,7 @@ public class RollerBallMine: NetworkBehaviour, IHittable
         if(hasExploded) return;
         
         hasExploded = true;
+        runAudioSource.Stop();
         explosion.Play();
         sfxAudioSource.PlayOneShot(explodeClip);
         if (Vector3.Distance(GameNetworkManager.Instance.localPlayerController.transform.position,
@@ -143,6 +186,19 @@ public class RollerBallMine: NetworkBehaviour, IHittable
                         transform.position) <= explosionRange)
                 {
                     if(IsServer) mine.ExplodeMineServerRpc();
+                }
+            }
+        });
+            
+        List<RollerBallMine> rollerBallMinesClose = FindObjectsOfType<RollerBallMine>().ToList();
+        rollerBallMinesClose.ForEach(mine =>
+        {
+            if ( !mine.hasExploded)
+            {
+                if (Vector3.Distance(mine.transform.position,
+                        transform.position) <= explosionRange)
+                {
+                    if(IsServer && mine.NetworkObjectId != NetworkObjectId) NetworkRollerBallMine.ExplodeClientRpc(mine.NetworkObjectId);
                 }
             }
         });

@@ -1,19 +1,25 @@
-﻿using BepInEx;
+﻿using System;
+using BepInEx;
 using System.IO;
 using System.Reflection;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using LethalConfig;
 using LethalConfig.ConfigItems;
 using LethalConfig.ConfigItems.Options;
 using LethalLib.Extras;
 using LethalLib.Modules;
+using RandomEnemiesSize;
+using Unity.Netcode;
 using static LethalLib.Modules.Levels;
 using UnityEngine;
+using NetworkPrefabs = LethalLib.Modules.NetworkPrefabs;
 
 
- namespace RollerBallMine
+namespace RollerBallMine
 {
     [BepInPlugin(GUID, NAME, VERSION)]
+    [BepInDependency("wexop.random_enemies_size", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("evaisa.lethallib", "0.15.1")]
     [BepInDependency(StaticNetcodeLib.StaticNetcodeLib.Guid, BepInDependency.DependencyFlags.HardDependency)]
     public class RollerBallMinePlugin : BaseUnityPlugin
@@ -21,7 +27,7 @@ using UnityEngine;
 
         const string GUID = "wexop.roller_ball_mine";
         const string NAME = "RollerBallMine";
-        const string VERSION = "1.0.0";
+        const string VERSION = "1.0.1";
 
         public static RollerBallMinePlugin instance;
 
@@ -34,7 +40,30 @@ using UnityEngine;
         public ConfigEntry<float> ExplosionRange;
         public ConfigEntry<int> ExplosionDamage;
         public ConfigEntry<float> DetectionRange;
+        public ConfigEntry<float> SoundVolume;
         
+        public ConfigEntry<bool> DebugMode;
+
+        public GameObject ballObject;
+
+        private void Update()
+        {
+            if(!DebugMode.Value) return;
+            var drop = IngamePlayerSettings.Instance.playerInput.actions.FindAction("Discard", false).ReadValue<float>();
+            
+            if (drop > 0)
+            {
+                if (ballObject != null)
+                {
+                    var o = Instantiate(ballObject,
+                        GameNetworkManager.Instance.localPlayerController.transform.position +
+                        GameNetworkManager.Instance.localPlayerController.transform.forward * 15, Quaternion.identity);
+
+                    var n = o.GetComponent<NetworkObject>();
+                    if(n.IsOwner) n.Spawn();
+                }
+            }
+        }
 
         void Awake()
         {
@@ -50,6 +79,14 @@ using UnityEngine;
             SpawnableMapObjectDef rollerBall =
                 bundle.LoadAsset<SpawnableMapObjectDef>("Assets/LethalCompany/Mods/RollerBallMine/RollerBallMine.asset");
             Logger.LogInfo($"{rollerBall.spawnableMapObject.prefabToSpawn.name} FOUND");
+
+            ballObject = rollerBall.spawnableMapObject.prefabToSpawn;
+            
+            if (Chainloader.PluginInfos.ContainsKey("wexop.random_enemies_size"))
+            {
+                Debug.Log("RandomEnemiesSize is here !");
+                ballObject.AddComponent<MapHazardSizeRandomizer>();
+            }
             
             rollerBall.spawnableMapObject.numberToSpawn.keys[0].value = instance.minSpawn.Value;
             rollerBall.spawnableMapObject.numberToSpawn.keys[1].value = instance.maxSpawn.Value;
@@ -57,7 +94,7 @@ using UnityEngine;
             NetworkPrefabs.RegisterNetworkPrefab(rollerBall.spawnableMapObject.prefabToSpawn);
             Utilities.FixMixerGroups(rollerBall.spawnableMapObject.prefabToSpawn);
             
-            MapObjects.RegisterMapObject(rollerBall, LevelTypes.All, null);
+            MapObjects.RegisterMapObject(rollerBall, LevelTypes.All, _ => rollerBall.spawnableMapObject.numberToSpawn);
             
             
             Logger.LogInfo($"RollerBallMine is ready!");
@@ -86,7 +123,7 @@ using UnityEngine;
             maxSpawn = Config.Bind(
                 "General", 
                 "MaxSpawn", 
-                10,
+                7,
                 "Max RollerBallMine possible for one game. You need to restart the game.");
             CreateIntConfig(maxSpawn);
             
@@ -114,7 +151,7 @@ using UnityEngine;
             ExplosionRange = Config.Bind(
                 "General", 
                 "ExplosionRange", 
-                5f,
+                4f,
                 "RollerBallMine explosion range. You don't need to restart the game :)");
             CreateFloatConfig(ExplosionRange, 0f, 30f);
             
@@ -131,6 +168,22 @@ using UnityEngine;
                 10f,
                 "RollerBallMine player detection distance. You don't need to restart the game :)");
             CreateFloatConfig(DetectionRange);
+            
+            SoundVolume = Config.Bind(
+                "Sound", 
+                "SoundVolume", 
+                0.6f,
+                "RollerBallMine sounds volume. You don't need to restart the game :)");
+            CreateFloatConfig(SoundVolume, 0f, 2f);
+            
+            //DEV
+            
+            DebugMode = Config.Bind(
+                "DEV", 
+                "DebugMode", 
+                false,
+                "Enable dev mod to spawn balls with [G]. You don't need to restart the game :)");
+            CreateBoolConfig(DebugMode);
         }
         
         private void CreateFloatConfig(ConfigEntry<float> configEntry, float min = 0f, float max = 100f)

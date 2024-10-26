@@ -31,11 +31,20 @@
       <Reference Include="LethalConfig">
         <HintPath>..\DEPENDENCES\LETHALCONFIG\plugins\LethalConfig\LethalConfig.dll</HintPath>
       </Reference>
+      <Reference Include="RandomEnemiesSize">
+        <HintPath>..\RandomEnemiesSize\Thunderstore\RandomEnemiesSize.dll</HintPath>
+      </Reference>
       <Reference Include="Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
         <HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.Burst.dll</HintPath>
       </Reference>
+      <Reference Include="Unity.InputSystem">
+        <HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.InputSystem.dll</HintPath>
+      </Reference>
       <Reference Include="Unity.Netcode.Runtime">
         <HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.Netcode.Runtime.dll</HintPath>
+      </Reference>
+      <Reference Include="UnityEngine.InputModule">
+        <HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\UnityEngine.InputModule.dll</HintPath>
       </Reference>
       <Reference Include="Xilophor.StaticNetcodeLib">
         <HintPath>..\DEPENDENCES\STATICNETCODELIB\BepInEx\plugins\StaticNetcodeLib\Xilophor.StaticNetcodeLib.dll</HintPath>

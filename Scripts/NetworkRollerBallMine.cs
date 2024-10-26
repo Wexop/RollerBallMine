@@ -55,5 +55,21 @@ public class NetworkRollerBallMine
             objectFound.SetValue(value);
         }
     }
+    
+    [ClientRpc]
+    public static void UpdateValuesClientRpc(ulong networkId, RollerBallMineValues values)
+    {
+        var objects = Object.FindObjectsByType<RollerBallMine>(FindObjectsSortMode.None).ToList();
+        var objectFound = objects.Find(e => e.NetworkObjectId == networkId);
+
+        if (objectFound == null)
+        {
+            Debug.LogError($"ROLLER BALL NOT FOUND {networkId}");
+        }
+        else
+        {
+            objectFound.UpdateValues(values);
+        }
+    }
 
 }

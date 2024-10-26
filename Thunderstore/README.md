@@ -4,7 +4,7 @@ You like playing with a soccer ball ? Try to play with this one !
 
 This mod add a new map hazard that looks like a soccer ball, but if you get too close it will run forward you and explode !
 
-There is some configs, check them in Lethal Config :)
+There is some configs, check them in Lethal Config :) Note that only host configs are taken
 
 ## Credits
 
