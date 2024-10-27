@@ -27,7 +27,7 @@ namespace RollerBallMine
 
         const string GUID = "wexop.roller_ball_mine";
         const string NAME = "RollerBallMine";
-        const string VERSION = "1.0.1";
+        const string VERSION = "1.0.2";
 
         public static RollerBallMinePlugin instance;
 
@@ -65,6 +65,15 @@ namespace RollerBallMine
             }
         }
 
+        void addRandomSizeComponent()
+        {
+            if (ballObject.GetComponent<MapHazardSizeRandomizer>() == null)
+            {
+                ballObject.AddComponent<MapHazardSizeRandomizer>();
+            }
+            
+        }
+
         void Awake()
         {
             instance = this;
@@ -85,7 +94,7 @@ namespace RollerBallMine
             if (Chainloader.PluginInfos.ContainsKey("wexop.random_enemies_size"))
             {
                 Debug.Log("RandomEnemiesSize is here !");
-                ballObject.AddComponent<MapHazardSizeRandomizer>();
+                addRandomSizeComponent();
             }
             
             rollerBall.spawnableMapObject.numberToSpawn.keys[0].value = instance.minSpawn.Value;
