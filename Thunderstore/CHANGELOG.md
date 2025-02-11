@@ -1,5 +1,9 @@
 # Changelog
 
+### v1.0.3
+
+- Fix spawn weight config
+
 ### v1.0.2
 
 - Fix RandomEnemiesSize chainloader check

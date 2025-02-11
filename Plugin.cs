@@ -27,7 +27,7 @@ namespace RollerBallMine
 
         const string GUID = "wexop.roller_ball_mine";
         const string NAME = "RollerBallMine";
-        const string VERSION = "1.0.2";
+        const string VERSION = "1.0.3";
 
         public static RollerBallMinePlugin instance;
 
@@ -97,13 +97,15 @@ namespace RollerBallMine
                 addRandomSizeComponent();
             }
             
-            rollerBall.spawnableMapObject.numberToSpawn.keys[0].value = instance.minSpawn.Value;
-            rollerBall.spawnableMapObject.numberToSpawn.keys[1].value = instance.maxSpawn.Value;
+            AnimationCurve curve = new AnimationCurve(new Keyframe(0, instance.minSpawn.Value, 0.267f, 0.267f, 0, 0),
+                new Keyframe(1, instance.maxSpawn.Value, 61, 61, 0.015f * instance.maxSpawn.Value, 0));
+
+            rollerBall.spawnableMapObject.numberToSpawn = curve;
             
             NetworkPrefabs.RegisterNetworkPrefab(rollerBall.spawnableMapObject.prefabToSpawn);
             Utilities.FixMixerGroups(rollerBall.spawnableMapObject.prefabToSpawn);
             
-            MapObjects.RegisterMapObject(rollerBall, LevelTypes.All, _ => rollerBall.spawnableMapObject.numberToSpawn);
+            MapObjects.RegisterMapObject(rollerBall, LevelTypes.All, _ => curve);
             
             
             Logger.LogInfo($"RollerBallMine is ready!");
@@ -127,14 +129,14 @@ namespace RollerBallMine
                 "MinSpawn", 
                 0,
                 "Min RollerBallMine possible for one game. You need to restart the game.");
-            CreateIntConfig(minSpawn);
+            CreateIntConfig(minSpawn, restart:true);
             
             maxSpawn = Config.Bind(
                 "General", 
                 "MaxSpawn", 
                 7,
                 "Max RollerBallMine possible for one game. You need to restart the game.");
-            CreateIntConfig(maxSpawn);
+            CreateIntConfig(maxSpawn, restart:true);
             
             Speed = Config.Bind(
                 "General", 
@@ -206,13 +208,13 @@ namespace RollerBallMine
             LethalConfigManager.AddConfigItem(exampleSlider);
         }
         
-        private void CreateIntConfig(ConfigEntry<int> configEntry, int min = 0, int max = 100)
+        private void CreateIntConfig(ConfigEntry<int> configEntry, int min = 0, int max = 100, bool restart = false)
         {
             var exampleSlider = new IntSliderConfigItem(configEntry, new IntSliderOptions()
             {
                 Min = min,
                 Max = max,
-                RequiresRestart = false
+                RequiresRestart = restart
             });
             LethalConfigManager.AddConfigItem(exampleSlider);
         }

@@ -90,7 +90,6 @@ public class RollerBallMine: NetworkBehaviour, IHittable
         values.TriggerRadius = detectPlayerRadius;
         
         NetworkRollerBallMine.UpdateValuesClientRpc(NetworkBehaviourId, values);
-        
     }
 
     private void Update()
